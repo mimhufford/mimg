@@ -89,6 +89,8 @@ start_directory_watcher :: () {
 }
 
 handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, user_data: *void) {
+    current_path_before_change := copy_string(images[current_index].path);
+
     if change.events & .REMOVED || change.events & .MOVED_FROM {
         for images {
             if it.path == change.full_path {
@@ -103,9 +105,18 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
         print("Added '%'\n", change.full_path);
     }
     
+    // sort the images based on the file name to (roughly) match the file explorer
     quick_sort(images, (a, b) => compare(a.path, b.path));
 
-    // TODO: recalculate current index more cleverly
+    // try to keep the previously viewed image selected
+    for images {
+        if it.path == current_path_before_change {
+            current_index = it_index;
+            break;
+        }
+    }
+
+    // if the image we were viewing was deleted, and was the last image, make sure we stay in bounds
     current_index = min(current_index, images.count - 1);
 }
 
