@@ -96,13 +96,13 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
                 print("Removed '%'\n", change.full_path);
             }
         }
-    } else if change.events & .ADDED || change.events & .MOVED_TO {
+    }
+    
+    if change.events & .ADDED || change.events & .MOVED_TO {
         load_image(change.full_path);
         print("Added '%'\n", change.full_path);
-    } else {
-        print("Unhandled file event: %\n", change.*);
     }
-
+    
     quick_sort(images, (a, b) => compare(a.path, b.path));
 
     // TODO: recalculate current index more cleverly
