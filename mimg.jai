@@ -103,7 +103,7 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
         print("Unhandled file event: %\n", change.*);
     }
 
-    // TODO: sort images collection based on file name
+    quick_sort(images, (a, b) => compare(a.path, b.path));
 
     // TODO: recalculate current index more cleverly
     current_index = min(current_index, images.count - 1);
@@ -140,6 +140,7 @@ WHITE :: Vector4.{1, 1, 1, 1};
 Simp  :: #import "Simp";
 Input :: #import "Input";
 #import "Math";
+#import "Sort";
 #import "Basic";
 #import "String";
 #import "File_Watcher";
