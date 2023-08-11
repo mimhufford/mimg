@@ -89,18 +89,17 @@ start_directory_watcher :: () {
 }
 
 handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, user_data: *void) {
-    if change.events & .REMOVED {
+    if change.events & .REMOVED || change.events & .MOVED_FROM {
         for images {
             if it.path == change.full_path {
                 remove it;
                 print("Removed '%'\n", change.full_path);
             }
         }
-    } else if change.events & .ADDED {
+    } else if change.events & .ADDED || change.events & .MOVED_TO {
         load_image(change.full_path);
         print("Added '%'\n", change.full_path);
     } else {
-        // TODO: file renamed events
         print("Unhandled file event: %\n", change.*);
     }
 
@@ -112,7 +111,7 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
 
 load_image :: (path: string) {
     image := array_add(*images);
-    image.path = path; // NOTE: this might need copying?
+    image.path = copy_string(path);
     success := Simp.texture_load_from_file(*image.texture, path);
     assert(success);
 }
@@ -142,6 +141,7 @@ Simp  :: #import "Simp";
 Input :: #import "Input";
 #import "Math";
 #import "Basic";
+#import "String";
 #import "File_Watcher";
 #import "File_Utilities";
 #import "Window_Creation";
