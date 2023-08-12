@@ -11,43 +11,36 @@ main :: () {
     load_images();
 
     while !window.quit {
-        Input.update_window_events();
-
-        for Input.get_window_resizes() {
-            Simp.update_window(it.window);
-
-            if it.window == window.window {
-                window.width  = it.width;
-                window.height = it.height;
-            }
-        }
-
-        for Input.events_this_frame {
-            if it.type == .QUIT then window.quit = true;
-
-            if it.type == {
-              case .KEYBOARD;
-                if it.key_pressed && it.key_code == .ESCAPE      then window.quit = true;
-                if it.key_pressed && it.key_code == .ARROW_LEFT  then current_index = max(current_index - 1, 0);
-                if it.key_pressed && it.key_code == .ARROW_RIGHT then current_index = min(current_index + 1, images.count - 1);
-                if it.key_pressed && it.key_code == #char "V"    then view_mode = ifx view_mode == .Image then .Gallery else .Image;
-            }
-        }
-
+        process_window_events();
         process_changes(*watcher);
-
-        if window.dirty {
-            window.dirty = false;
-            draw_one_frame();
-            sleep_milliseconds(1);
-        }
-        else
-        {
-            window.dirty = true;
-            sleep_milliseconds(10);
-        }
-
+        draw_one_frame();
+        sleep_milliseconds(10);
         reset_temporary_storage();
+    }
+}
+
+process_window_events :: () {
+    Input.update_window_events();
+
+    for Input.get_window_resizes() {
+        Simp.update_window(it.window);
+
+        if it.window == window.window {
+            window.width  = it.width;
+            window.height = it.height;
+        }
+    }
+
+    for Input.events_this_frame {
+        if it.type == .QUIT then window.quit = true;
+
+        if it.type == {
+            case .KEYBOARD;
+            if it.key_pressed && it.key_code == .ESCAPE      then window.quit = true;
+            if it.key_pressed && it.key_code == .ARROW_LEFT  then current_index = max(current_index - 1, 0);
+            if it.key_pressed && it.key_code == .ARROW_RIGHT then current_index = min(current_index + 1, images.count - 1);
+            if it.key_pressed && it.key_code == #char "V"    then view_mode = ifx view_mode == .Image then .Gallery else .Image;
+        }
     }
 }
 
@@ -153,7 +146,6 @@ Window_Info :: struct {
     window : Window_Type;
     width  := 960;
     height := 600;
-    dirty  := true;
     quit   := false;
 }
 
