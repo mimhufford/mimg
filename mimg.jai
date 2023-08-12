@@ -3,6 +3,7 @@ watcher       : File_Watcher;
 images        : [..]Image;
 current_index := 0;
 directory     := "images";
+view_mode     := View_Mode.Image;
 
 main :: () {
     start_directory_watcher();
@@ -26,9 +27,10 @@ main :: () {
 
             if it.type == {
               case .KEYBOARD;
-                if it.key_pressed && it.key_code == .ESCAPE then window.quit = true;
-                if it.key_pressed && it.key_code == .ARROW_LEFT   then current_index = max(current_index - 1, 0);
-                if it.key_pressed && it.key_code == .ARROW_RIGHT  then current_index = min(current_index + 1, images.count - 1);
+                if it.key_pressed && it.key_code == .ESCAPE      then window.quit = true;
+                if it.key_pressed && it.key_code == .ARROW_LEFT  then current_index = max(current_index - 1, 0);
+                if it.key_pressed && it.key_code == .ARROW_RIGHT then current_index = min(current_index + 1, images.count - 1);
+                if it.key_pressed && it.key_code == #char "V"    then view_mode = ifx view_mode == .Image then .Gallery else .Image;
             }
         }
 
@@ -52,7 +54,14 @@ main :: () {
 draw_one_frame :: () {
     Simp.clear_render_target(.1, .1, .1, 1);
 
-    draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
+    if #complete view_mode == {
+        case .Image;
+            draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
+        case .Gallery;
+            // @TODO: proper gallery mode
+            draw_image(images[0], 0, 0, window.width * 0.5, xx window.height);
+            draw_image(images[1], window.width*0.5, 0, xx window.width, xx window.height);
+    }
 
     Simp.swap_buffers(window.window);
 }
@@ -146,6 +155,11 @@ Window_Info :: struct {
     height := 600;
     dirty  := true;
     quit   := false;
+}
+
+View_Mode :: enum {
+    Image;
+    Gallery;
 }
 
 WHITE :: Vector4.{1, 1, 1, 1};
