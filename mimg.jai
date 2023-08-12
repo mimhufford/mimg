@@ -51,9 +51,15 @@ draw_one_frame :: () {
         case .Image;
             draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
         case .Gallery;
-            // @TODO: proper gallery mode
-            draw_image(images[0], 0, 0, window.width * 0.5, xx window.height);
-            draw_image(images[1], window.width*0.5, 0, xx window.width, xx window.height);
+            rows := cast(int)(sqrt(cast(float)images.count));
+            cols := cast(int)(ceil(cast(float)images.count / rows));
+            w := window.width / cols;
+            h := window.height / rows;
+            for images {
+                x := cast(float)(it_index % cols);
+                y := cast(float)(it_index / cols);
+                draw_image(it, x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h);
+            }
     }
 
     Simp.swap_buffers(window.window);
