@@ -52,20 +52,22 @@ main :: () {
 draw_one_frame :: () {
     Simp.clear_render_target(.1, .1, .1, 1);
 
-    image := images[current_index].texture;
-    Simp.set_shader_for_images(*image);
-
-    // // maintain aspect ratio of image
-    max_w := cast(float)window.width;
-    max_h := cast(float)window.height;
-    ratio := min(max_w / image.width, max_h / image.height);
-    w := image.width * ratio;
-    h := image.height * ratio;
-    x := (max_w - w) * 0.5;
-    y := (max_h - h) * 0.5;
-    Simp.immediate_quad(x, y, x + w, y + h, WHITE);
-
+    draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
+    
     Simp.swap_buffers(window.window);
+}
+
+draw_image :: (using image: Image, x0: float, y0: float, x1: float, y1: float) {
+    // maintain aspect ratio of image
+    max_w := x1 - x0;
+    max_h := y1 - y0;
+    ratio := min(max_w / texture.width, max_h / texture.height);
+    w := texture.width * ratio;
+    h := texture.height * ratio;
+    x := x0 +(max_w - w) * 0.5;
+    y := y0 + (max_h - h) * 0.5;
+    Simp.set_shader_for_images(*texture);
+    Simp.immediate_quad(x, y, x + w, y + h, WHITE);
 }
 
 initialise_window :: () {
