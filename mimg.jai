@@ -3,7 +3,7 @@ watcher       : File_Watcher;
 images        : [..]Image;
 current_index := 0;
 directory     := "images";
-view_mode     := View_Mode.Image;
+view_mode     := View_Mode.Gallery;
 
 main :: () {
     start_directory_watcher();
@@ -33,13 +33,15 @@ process_window_events :: () {
 
     for Input.events_this_frame {
         if it.type == .QUIT then window.quit = true;
-
-        if it.type == {
-            case .KEYBOARD;
-            if it.key_pressed && it.key_code == .ESCAPE      then window.quit = true;
-            if it.key_pressed && it.key_code == .ARROW_LEFT  then current_index = max(current_index - 1, 0);
-            if it.key_pressed && it.key_code == .ARROW_RIGHT then current_index = min(current_index + 1, images.count - 1);
-            if it.key_pressed && it.key_code == #char "V"    then view_mode = ifx view_mode == .Image then .Gallery else .Image;
+        if it.type == .KEYBOARD && it.key_pressed {
+            if it.key_code == {
+                case .ESCAPE;       handle_escape(); 
+                case .ENTER;        handle_return();
+                case .ARROW_LEFT;   move_cursor_left();
+                case .ARROW_RIGHT;  move_cursor_right();
+                case .ARROW_DOWN;   move_cursor_down();
+                case .ARROW_UP;     move_cursor_up();
+            }
         }
     }
 }
@@ -55,6 +57,15 @@ draw_one_frame :: () {
             cols := cast(int)(ceil(cast(float)images.count / rows));
             w := window.width / cols;
             h := window.height / rows;
+
+            // @TODO: draw something nicer than a big white background
+            {
+                x := cast(float)(current_index % cols);
+                y := cast(float)(current_index / cols);
+                Simp.set_shader_for_color();
+                Simp.immediate_quad(x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h, WHITE);
+            }
+
             for images {
                 x := cast(float)(it_index % cols);
                 y := cast(float)(it_index / cols);
@@ -76,6 +87,38 @@ draw_image :: (using image: Image, x0: float, y0: float, x1: float, y1: float) {
     y := y0 + (max_h - h) * 0.5;
     Simp.set_shader_for_images(*texture);
     Simp.immediate_quad(x, y, x + w, y + h, WHITE);
+}
+
+move_cursor_left :: () {
+    current_index = max(current_index - 1, 0);
+}
+
+move_cursor_right :: () {
+    current_index = min(current_index + 1, images.count - 1);
+}
+
+move_cursor_up :: () {
+    rows := cast(int)(sqrt(cast(float)images.count));
+    current_index = max(current_index - rows - 1, 0);
+}
+
+move_cursor_down :: () {
+    rows := cast(int)(sqrt(cast(float)images.count));
+    current_index = min(current_index + rows + 1, images.count - 1);
+}
+
+handle_return :: () {
+    if view_mode == .Gallery {
+        view_mode = .Image;
+    }
+}
+
+handle_escape :: () {
+    if view_mode == .Image {
+        view_mode = .Gallery;
+    } else {
+        window.quit = true;
+    }
 }
 
 initialise_window :: () {
