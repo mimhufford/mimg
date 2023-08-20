@@ -35,8 +35,9 @@ process_window_events :: () {
         if it.type == .QUIT then window.quit = true;
         if it.type == .KEYBOARD && it.key_pressed {
             if it.key_code == {
-                case .ESCAPE;       handle_escape(); 
+                case .ESCAPE;       handle_escape();
                 case .ENTER;        handle_return();
+                case .DELETE;       delete_current_image();
                 case .ARROW_LEFT;   move_cursor_left();
                 case .ARROW_RIGHT;  move_cursor_right();
                 case .ARROW_DOWN;   move_cursor_down();
@@ -121,11 +122,27 @@ handle_escape :: () {
     }
 }
 
+delete_current_image :: () {
+    #if OS == .WINDOWS {
+        #import "Windows";
+        #import "Windows_Utf8";
+        op : SHFILEOPSTRUCTW;
+        op.wFunc = FO_DELETE;
+        full_path := tprint("%1%2\0\0", path_strip_filename(get_path_of_running_executable()), images[current_index].path);
+        op.pFrom = utf8_to_wide(full_path);
+        op.fFlags = .FOF_ALLOWUNDO;
+        result := SHFileOperationW(*op);
+    } else {
+        // @TODO: move to bin instead of hard delete
+        file_delete(images[current_index].path);
+    }
+}
+
 initialise_window :: () {
     #if OS == .WINDOWS {
-        Windows :: #import "Windows";
-        Windows.SetProcessDPIAware();
-        Windows.timeBeginPeriod(1);
+        #import "Windows";
+        SetProcessDPIAware();
+        timeBeginPeriod(1);
     }
 
     window.window = create_window(window.width, window.height, "mimg");
@@ -177,7 +194,10 @@ load_image :: (path: string) {
     image := array_add(*images);
     image.path = copy_string(path);
     success := Simp.texture_load_from_file(*image.texture, path);
-    assert(success);
+    if !success {
+        print("ERROR: failed to load '%'\n", path);
+        images.count -= 1;
+    }
 }
 
 load_images :: () {
@@ -208,9 +228,11 @@ WHITE :: Vector4.{1, 1, 1, 1};
 Simp  :: #import "Simp";
 Input :: #import "Input";
 #import "Math";
+#import "File";
 #import "Sort";
 #import "Basic";
 #import "String";
+#import "System";
 #import "File_Watcher";
 #import "File_Utilities";
 #import "Window_Creation";
