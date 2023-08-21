@@ -54,8 +54,7 @@ draw_one_frame :: () {
         case .Image;
             draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
         case .Gallery;
-            rows := cast(int)(sqrt(cast(float)images.count));
-            cols := cast(int)(ceil(cast(float)images.count / rows));
+            rows, cols := calculate_rows_and_cols_for_count(images.count);
             w := window.width / cols;
             h := window.height / rows;
 
@@ -90,6 +89,12 @@ draw_image :: (using image: Image, x0: float, y0: float, x1: float, y1: float) {
     Simp.immediate_quad(x, y, x + w, y + h, WHITE);
 }
 
+calculate_rows_and_cols_for_count :: (count: int) -> int, int {
+    rows := cast(int)(sqrt(cast(float)count));
+    cols := cast(int)(ceil(cast(float)count / rows));
+    return rows, cols;
+}
+
 move_cursor_left :: () {
     current_index = max(current_index - 1, 0);
 }
@@ -99,13 +104,13 @@ move_cursor_right :: () {
 }
 
 move_cursor_up :: () {
-    rows := cast(int)(sqrt(cast(float)images.count));
-    current_index = max(current_index - rows - 1, 0);
+    rows, cols := calculate_rows_and_cols_for_count(images.count);
+    current_index = max(current_index - cols, 0);
 }
 
 move_cursor_down :: () {
-    rows := cast(int)(sqrt(cast(float)images.count));
-    current_index = min(current_index + rows + 1, images.count - 1);
+    rows, cols := calculate_rows_and_cols_for_count(images.count);
+    current_index = min(current_index + cols, images.count - 1);
 }
 
 handle_return :: () {
