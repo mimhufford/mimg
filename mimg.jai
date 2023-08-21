@@ -1,18 +1,16 @@
 window        : Window_Info;
-watcher       : File_Watcher;
+watcher       : *File_Watcher;
 images        : [..]Image;
 current_index := 0;
-directory     := "images";
 view_mode     := View_Mode.Gallery;
 
 main :: () {
-    start_directory_watcher();
     initialise_window();
-    load_images();
+    open_directory("images");
 
     while !window.quit {
         process_window_events();
-        process_changes(*watcher);
+        process_changes(watcher);
         draw_one_frame();
         sleep_milliseconds(10);
         reset_temporary_storage();
@@ -37,7 +35,7 @@ process_window_events :: () {
         if it.type == .DRAG_AND_DROP_FILES {
             for it.files {
                 if is_directory(it) {
-                    print("%\n", it);
+                    open_directory(it);
                     break;
                 }
             }
@@ -171,11 +169,24 @@ initialise_window :: () {
     }
 }
 
-start_directory_watcher :: () {
-    init(*watcher, handle_directory_event);
-    if !add_directories(*watcher, directory) {
+open_directory :: (directory: string) {
+    if watcher {
+        deinit(watcher);
+        free(watcher);
+    }
+
+    watcher = New(File_Watcher(void));
+    init(watcher, handle_directory_event);
+
+    if !add_directories(watcher, directory) {
         print("ERROR: Couldn't watch directory '%'", directory);
         exit(1);
+    }
+
+    array_reset(*images);
+
+    for file_list(directory) {
+        load_image(it);
     }
 }
 
@@ -218,12 +229,6 @@ load_image :: (path: string) {
     if !success {
         print("ERROR: failed to load '%'\n", path);
         images.count -= 1;
-    }
-}
-
-load_images :: () {
-    for file_list(directory) {
-        load_image(it);
     }
 }
 
