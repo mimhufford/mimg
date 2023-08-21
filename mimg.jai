@@ -33,6 +33,16 @@ process_window_events :: () {
 
     for Input.events_this_frame {
         if it.type == .QUIT then window.quit = true;
+
+        if it.type == .DRAG_AND_DROP_FILES {
+            for it.files {
+                if is_directory(it) {
+                    print("%\n", it);
+                    break;
+                }
+            }
+        }
+
         if it.type == .KEYBOARD && it.key_pressed {
             if it.key_code == {
                 case .ESCAPE;       handle_escape();
@@ -153,6 +163,12 @@ initialise_window :: () {
     window.window = create_window(window.width, window.height, "mimg");
     window.width, window.height = Simp.get_render_dimensions(window.window);
     Simp.set_render_target(window.window);
+
+    #if OS == .WINDOWS {
+        DragAcceptFiles(window.window, cast(BOOL)true);
+    } else {
+        // @TODO: accept drag and drop
+    }
 }
 
 start_directory_watcher :: () {
