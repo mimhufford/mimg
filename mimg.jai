@@ -146,9 +146,7 @@ delete_current_image :: () {
         #import "Windows_Utf8";
         op : SHFILEOPSTRUCTW;
         op.wFunc = FO_DELETE;
-        // @TODO: this commit temporarily breaks deleting due to paths, need to check separators, normalise, etc.
-        full_path := tprint("%1%2\0\0", path_strip_filename(get_path_of_running_executable()), images[current_index].path);
-        op.pFrom = utf8_to_wide(full_path);
+        op.pFrom = utf8_to_wide(tprint("%\0\0", images[current_index].path));
         op.fFlags = .FOF_ALLOWUNDO;
         result := SHFileOperationW(*op);
     } else {
@@ -201,9 +199,11 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
 
     if change.events & .REMOVED || change.events & .MOVED_FROM {
         for images {
-            if it.path == change.full_path {
+            path := tprint("%", change.full_path);
+            path_overwrite_separators(path);
+            if it.path == path {
                 remove it;
-                print("Removed '%'\n", change.full_path);
+                print("Removed '%'\n", path);
             }
         }
     }
@@ -230,6 +230,7 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
 
 load_image :: (path: string) {
     image := array_add(*images);
+    path_overwrite_separators(path);
     image.path = copy_string(path);
     success := Simp.texture_load_from_file(*image.texture, path);
     if !success {
