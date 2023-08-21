@@ -6,11 +6,12 @@ view_mode     := View_Mode.Gallery;
 
 main :: () {
     initialise_window();
-    open_directory("images");
+
+    // @TODO: accept directory as command line argument
 
     while !window.quit {
         process_window_events();
-        process_changes(watcher);
+        if watcher process_changes(watcher);
         draw_one_frame();
         sleep_milliseconds(10);
         reset_temporary_storage();
@@ -58,27 +59,31 @@ process_window_events :: () {
 draw_one_frame :: () {
     Simp.clear_render_target(.1, .1, .1, 1);
 
-    if #complete view_mode == {
-        case .Image;
-            draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
-        case .Gallery;
-            rows, cols := calculate_rows_and_cols_for_count(images.count);
-            w := window.width / cols;
-            h := window.height / rows;
+    if watcher {
+        if #complete view_mode == {
+            case .Image;
+                draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
+            case .Gallery;
+                rows, cols := calculate_rows_and_cols_for_count(images.count);
+                w := window.width / cols;
+                h := window.height / rows;
 
-            // @TODO: draw something nicer than a big white background
-            {
-                x := cast(float)(current_index % cols);
-                y := cast(float)(current_index / cols);
-                Simp.set_shader_for_color();
-                Simp.immediate_quad(x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h, WHITE);
-            }
+                // @TODO: draw something nicer than a big white background
+                {
+                    x := cast(float)(current_index % cols);
+                    y := cast(float)(current_index / cols);
+                    Simp.set_shader_for_color();
+                    Simp.immediate_quad(x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h, WHITE);
+                }
 
-            for images {
-                x := cast(float)(it_index % cols);
-                y := cast(float)(it_index / cols);
-                draw_image(it, x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h);
-            }
+                for images {
+                    x := cast(float)(it_index % cols);
+                    y := cast(float)(it_index / cols);
+                    draw_image(it, x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h);
+                }
+        }
+    } else {
+        // @TODO: draw message about dropping a directory onto the window
     }
 
     Simp.swap_buffers(window.window);
@@ -141,6 +146,7 @@ delete_current_image :: () {
         #import "Windows_Utf8";
         op : SHFILEOPSTRUCTW;
         op.wFunc = FO_DELETE;
+        // @TODO: this commit temporarily breaks deleting due to paths, need to check separators, normalise, etc.
         full_path := tprint("%1%2\0\0", path_strip_filename(get_path_of_running_executable()), images[current_index].path);
         op.pFrom = utf8_to_wide(full_path);
         op.fFlags = .FOF_ALLOWUNDO;
