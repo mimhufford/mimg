@@ -104,12 +104,12 @@ move_cursor_right :: () {
 }
 
 move_cursor_up :: () {
-    rows, cols := calculate_rows_and_cols_for_count(images.count);
-    current_index = max(current_index - cols, 0);
+    _, cols := calculate_rows_and_cols_for_count(images.count);
+    if current_index - cols >= 0 current_index -= cols;
 }
 
 move_cursor_down :: () {
-    rows, cols := calculate_rows_and_cols_for_count(images.count);
+    _, cols := calculate_rows_and_cols_for_count(images.count);
     current_index = min(current_index + cols, images.count - 1);
 }
 
