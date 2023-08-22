@@ -270,3 +270,10 @@ Input :: #import "Input";
 #import "File_Watcher";
 #import "File_Utilities";
 #import "Window_Creation";
+
+#run {
+    #if OS == .WINDOWS {
+        #import "Windows_Resources";
+        disable_runtime_console();
+    }
+}
