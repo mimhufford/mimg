@@ -7,7 +7,8 @@ view_mode     := View_Mode.Gallery;
 main :: () {
     initialise_window();
 
-    // @TODO: accept directory as command line argument
+    args := get_command_line_arguments();
+    if args.count > 1 && is_directory(args[1]) then open_directory(args[1]);
 
     while !window.quit {
         process_window_events();
