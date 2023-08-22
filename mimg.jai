@@ -58,7 +58,7 @@ process_window_events :: () {
 }
 
 draw_one_frame :: () {
-    Simp.clear_render_target(.1, .1, .1, 1);
+    Simp.clear_render_target(BG.x, BG.y, BG.z, 1.0);
 
     if watcher {
         if #complete view_mode == {
@@ -163,7 +163,7 @@ initialise_window :: () {
         timeBeginPeriod(1);
     }
 
-    window.window = create_window(window.width, window.height, "mimg");
+    window.window = create_window(window.width, window.height, "mimg", background_color_rgb=BG.component);
     window.width, window.height = Simp.get_render_dimensions(window.window);
     Simp.set_render_target(window.window);
 
@@ -257,7 +257,8 @@ View_Mode :: enum {
     Gallery;
 }
 
-WHITE :: Vector4.{1, 1, 1, 1};
+BG    :: Vector3.{0.1, 0.1, 0.1};
+WHITE :: Vector4.{1.0, 1.0, 1.0, 1.0};
 
 Simp  :: #import "Simp";
 Input :: #import "Input";
