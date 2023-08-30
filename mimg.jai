@@ -66,21 +66,25 @@ draw_one_frame :: () {
                 draw_image(images[current_index], 0, 0, xx window.width, xx window.height);
             case .Gallery;
                 rows, cols := calculate_rows_and_cols_for_count(images.count);
-                w := window.width / cols;
-                h := window.height / rows;
+                if rows > 0 && cols > 0 {
+                    w := window.width / cols;
+                    h := window.height / rows;
 
-                // @TODO: draw something nicer than a big white background
-                {
-                    x := cast(float)(current_index % cols);
-                    y := cast(float)(current_index / cols);
-                    Simp.set_shader_for_color();
-                    Simp.immediate_quad(x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h, WHITE);
-                }
+                    // @TODO: draw something nicer than a big white background
+                    {
+                        x := cast(float)(current_index % cols);
+                        y := cast(float)(current_index / cols);
+                        Simp.set_shader_for_color();
+                        Simp.immediate_quad(x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h, WHITE);
+                    }
 
-                for images {
-                    x := cast(float)(it_index % cols);
-                    y := cast(float)(it_index / cols);
-                    draw_image(it, x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h);
+                    for images {
+                        x := cast(float)(it_index % cols);
+                        y := cast(float)(it_index / cols);
+                        draw_image(it, x*w, window.height-(y+1)*h, x*w + w, window.height-(y+1)*h + h);
+                    }
+                } else {
+                    // @TODO: draw message about directory not copntaining any valid images
                 }
         }
     } else {
@@ -128,7 +132,7 @@ move_cursor_down :: () {
 }
 
 handle_return :: () {
-    if view_mode == .Gallery {
+    if view_mode == .Gallery && current_index >= 0 {
         view_mode = .Image;
     }
 }
@@ -196,7 +200,7 @@ open_directory :: (directory: string) {
 }
 
 handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, user_data: *void) {
-    current_path_before_change := copy_string(images[current_index].path);
+    current_path_before_change := ifx current_index >= 0 copy_string(images[current_index].path);
 
     if change.events & .REMOVED || change.events & .MOVED_FROM {
         for images {
