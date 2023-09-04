@@ -1,21 +1,34 @@
 window        : Window_Info;
 watcher       : *File_Watcher;
-images        : [..]Image;
+images        : [..]*Image;
 current_index := 0;
 view_mode     := View_Mode.Gallery;
+image_loader  : Thread_Group;
 
 main :: () {
     initialise_window();
+    initalise_image_loading_threads();
 
     args := get_command_line_arguments();
     if args.count > 1 && is_directory(args[1]) then open_directory(args[1]);
 
     while !window.quit {
+        process_loaded_images();
         process_window_events();
         if watcher process_changes(watcher);
         draw_one_frame();
         sleep_milliseconds(10);
         reset_temporary_storage();
+    }
+}
+
+process_loaded_images :: () {
+    loaded := get_completed_work(*image_loader);
+    for loaded {
+        image := cast(*Image)it;
+        Simp.texture_load_from_bitmap(*image.texture, *image.bitmap);
+        Simp.deinit(*image.bitmap);
+        image.bitmap = .{};
     }
 }
 
@@ -178,6 +191,13 @@ initialise_window :: () {
     }
 }
 
+initalise_image_loading_threads :: () {
+    num_cpus := get_number_of_processors();
+    num_threads := max(num_cpus - 1, 1);
+    init(*image_loader, num_threads, image_loader_proc);
+    start(*image_loader);
+}
+
 open_directory :: (directory: string) {
     if watcher {
         deinit(watcher);
@@ -234,18 +254,26 @@ handle_directory_event :: (watcher: *File_Watcher(void), change: *File_Change, u
 }
 
 load_image :: (path: string) {
-    image := array_add(*images);
+    image := New(Image);
+    array_add(*images, image);
     path_overwrite_separators(path);
     image.path = copy_string(path);
-    success := Simp.texture_load_from_file(*image.texture, path);
-    if !success {
-        print("ERROR: failed to load '%'\n", path);
-        images.count -= 1;
+    add_work(*image_loader, image);
+}
+
+image_loader_proc :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thread_Continue_Status {
+    image := cast(*Image)work;
+
+    if !Simp.bitmap_load(*image.bitmap, image.path) {
+        array_ordered_remove_by_value(*images, image);
     }
+
+    return .CONTINUE;
 }
 
 Image :: struct {
     path    : string;
+    bitmap  : Simp.Bitmap;
     texture : Simp.Texture;
 }
 
@@ -272,6 +300,7 @@ Input :: #import "Input";
 #import "Basic";
 #import "String";
 #import "System";
+#import "Thread";
 #import "File_Watcher";
 #import "File_Utilities";
 #import "Window_Creation";
